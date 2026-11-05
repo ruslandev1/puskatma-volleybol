@@ -96,7 +96,7 @@ textarea{width:100%;min-height:220px;resize:vertical;border:2px solid var(--soft
 .toggle button[aria-pressed="true"]{background:var(--outer);color:#fff}
 
 /* Groups as mini courts */
-.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 .group{background:var(--surface);border-radius:16px;overflow:hidden;border:1px solid var(--soft)}
 .ghead{background:var(--outer);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 14px}
 .ghead h3{font-size:30px;font-weight:900}
@@ -125,7 +125,9 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:15}
 .shadow{position:absolute;left:0;top:0;width:70px;height:18px;margin:-9px 0 0 -35px;border-radius:50%;background:rgba(15,36,64,.45);filter:blur(2px)}
 .ticker{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:3;text-align:center;color:#fff;
   font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:clamp(28px,5vw,50px);line-height:1.05;
-  background:rgba(15,36,64,.6);padding:8px 22px 10px;border-radius:16px;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+  background:rgba(15,36,64,.6);padding:8px 22px 10px;border-radius:16px;width:max-content;max-width:94%;
+  display:flex;align-items:center;gap:14px}
+.ticker > div{min-width:0}
 .ticker small{display:block;font-family:"Rubik",sans-serif;font-size:14px;font-weight:500;color:var(--ballY);margin-top:4px}
 .ring{position:absolute;z-index:5;width:20px;height:20px;margin:-10px 0 0 -10px;border:4px solid #fff;border-radius:50%;pointer-events:none;animation:ring .5s ease-out forwards}
 .ring.big{border-color:var(--ballY);border-width:6px;animation:ringBig .75s ease-out forwards}
@@ -139,7 +141,14 @@ canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:15}
 .picked.pop{animation:pop .55s cubic-bezier(.2,1.6,.4,1)}
 @keyframes pop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
 
-html.calm .ball.bounce,html.calm .slot,html.calm .picked.pop,html.calm .gear:hover{animation:none;transform:none}
+/* Team crests: the source PNGs carry wide margins and mixed backgrounds, so each sits on a white tile, zoomed to crop the margin */
+.logo{flex:none;display:block;width:40px;height:40px;background:#fff;border-radius:22%;overflow:hidden}
+.logo img{display:block;width:100%;height:100%;object-fit:contain;transform:scale(1.4)}
+.ballBox:has(.logo) .ball{display:none}
+.ballBox .logo{width:100%;height:100%;box-shadow:0 10px 18px rgba(0,0,0,.28);animation:pop .55s cubic-bezier(.2,1.6,.4,1)}
+.ticker .logo{width:clamp(44px,7vw,64px);height:clamp(44px,7vw,64px)}
+
+html.calm .ball.bounce,html.calm .slot,html.calm .picked.pop,html.calm .ballBox .logo,html.calm .gear:hover{animation:none;transform:none}
 </style>
 </head>
 <body>
@@ -166,6 +175,7 @@ html.calm .ball.bounce,html.calm .slot,html.calm .picked.pop,html.calm .gear:hov
       <div class="flash" id="flash" aria-hidden="true"></div>
       <div class="side stage">
         <div class="ballBox">
+          <div id="pickLogo" style="display:contents"></div>
           <svg class="ball" id="ball" viewBox="0 0 100 100" aria-hidden="true">
             <defs>
               <clipPath id="c"><circle cx="50" cy="50" r="46"/></clipPath>
@@ -255,7 +265,17 @@ html.calm .ball.bounce,html.calm .slot,html.calm .picked.pop,html.calm .gear:hov
 
 <script>
 const $ = s => document.querySelector(s);
-const defaults = ["Neftçi","Azərreyl","Qaraçuxur","Murov","Lokomotiv","Abşeron","Gəncə","Şəki","Lənkəran","Sumqayıt","Quba","Naxçıvan"];
+// Each name matches a file in assets/ (<name>.png)
+const defaults = ["Anbar","Avrora İdarə heyəti","Ərazi İnkişaf","İnsan Resursları Departamenti","İstehsalat","Logistika","Maliyyə","Marketinq","Nəqliyyat","Planmasters","Qalaktikos","Satışa Nəzarət","Şaurma N1","Süd Team","Tamstore İdarə heyəti","Tamstore Ofis","Tamstore Plus","Tamstore Satış"];
+const logoKey = s => s.normalize("NFC").toLocaleLowerCase("az");
+const logoSrc = new Map(defaults.map(t => [logoKey(t), `assets/${encodeURIComponent(t)}.png`]));
+// Decode up front and keep the references so the fast ticker doesn't flicker
+const logoCache = [...logoSrc.values()].map(src => { const i = new Image(); i.src = src; return i; });
+function logo(name){
+  const src = logoSrc.get(logoKey(name));
+  return src ? `<span class="logo"><img src="${src}" alt="" decoding="sync" onerror="this.parentNode.remove()"></span>` : "";
+}
+const tickerHTML = (name, label) => `${logo(name)}<div>${esc(name)}<small>${label}</small></div>`;
 const store = {
   get(k){try{return localStorage.getItem(k)}catch(e){return null}},
   set(k,v){try{localStorage.setItem(k,v)}catch(e){}}
@@ -264,7 +284,7 @@ let mode = store.get("vb-mode") || "group";
 let n = parseInt(store.get("vb-n")) || 4;
 let pool = [], groups = [], turn = 0, busy = false, auto = false;
 
-$("#names").value = store.get("vb-names") || defaults.join("\n");
+$("#names").value = store.get("vb-names-v2") || defaults.join("\n");
 
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const groupName = i => mode === "group" ? `Qrup ${letters[i] || i+1}` : `Komanda ${i+1}`;
@@ -285,6 +305,7 @@ function setup(){
   $("#nLabel").textContent = mode === "group" ? "Qrup sayı" : "Komanda sayı";
   document.querySelectorAll(".toggle button[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode));
   $("#picked").innerHTML = "Hazırdır<small>Top atmağa hazır</small>";
+  $("#pickLogo").innerHTML = "";
   render(); updateButtons();
 }
 
@@ -296,7 +317,7 @@ function render(){
     return `<article class="group ${pool.length && i === turn % n ? "next" : ""}">
       <div class="ghead"><h3>${groupName(i)}</h3><span>${g.length} ${mode==="group"?"komanda":"oyunçu"}</span></div>
       <ol class="slots">
-        ${g.map((t,k)=>`<li class="slot"><i>${k+1}</i>${esc(t)}</li>`).join("")}
+        ${g.map((t,k)=>`<li class="slot"><i>${k+1}</i>${logo(t)}<span>${esc(t)}</span></li>`).join("")}
         ${Array.from({length:empties},()=>`<li class="slot empty">Boş yer</li>`).join("")}
       </ol></article>`;
   }).join("");
@@ -373,7 +394,7 @@ async function rally(fast, team, gi){
   (async () => {
     while(running){
       const r = pool[Math.floor(Math.random() * pool.length)];
-      tk.innerHTML = `${esc(r)}<small>${label}</small>`;
+      tk.innerHTML = tickerHTML(r, label);
       await wait(delay);
     }
   })();
@@ -399,7 +420,7 @@ async function rally(fast, team, gi){
   await move(pos, pos, fast ? 280 : 650, t => 230 * Math.sin(t * Math.PI / 2), t => 1 - (1 - t) * (1 - t), 200);
   await wait(fast ? 60 : 500);
   running = false;
-  tk.innerHTML = `${esc(team)}<small>Hücum zərbəsi!</small>`;
+  tk.innerHTML = tickerHTML(team, "Hücum zərbəsi!");
 
   // spike down onto the court
   const land = {x:B.x, y:B.y};
@@ -421,6 +442,7 @@ async function drawOne(fast){
   court.classList.remove("drawing");
   ball.classList.remove("bounce"); void ball.offsetWidth; ball.classList.add("bounce");
   picked.innerHTML = `${esc(team)}<small>${groupName(gi)}</small>`;
+  $("#pickLogo").innerHTML = logo(team);
   picked.classList.remove("pop"); void picked.offsetWidth; picked.classList.add("pop");
   render();
   busy = false; updateButtons();
@@ -462,7 +484,7 @@ document.querySelectorAll(".toggle button[data-mode]").forEach(b => b.onclick = 
   if(busy) return; mode = b.dataset.mode; store.set("vb-mode",mode); setup();
 });
 let t; $("#names").addEventListener("input", () => {
-  store.set("vb-names", $("#names").value);
+  store.set("vb-names-v2", $("#names").value);
   clearTimeout(t); t = setTimeout(() => { if(!busy) setup(); }, 300);
 });
 $("#copy").onclick = async () => {
