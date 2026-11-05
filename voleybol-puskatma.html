@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voleybol püşkatma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EAF3FB; --surface:#FFFFFF; --ink:#0F2440; --muted:#5A6B82;
+  --court:#E8833A; --courtDeep:#C9621C; --outer:#2D6CB0; --line:#FFFFFF;
+  --ballY:#FFD23F; --ballB:#1F5FBF; --soft:#D6E6F5;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#08172B; --surface:#10263F; --ink:#EAF2FB; --muted:#93A7C0;
+    --court:#E07B33; --courtDeep:#B85A18; --outer:#1D4F86; --line:#F4F8FC;
+    --soft:#1A3554; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08172B; --surface:#10263F; --ink:#EAF2FB; --muted:#93A7C0;
+  --court:#E07B33; --courtDeep:#B85A18; --outer:#1D4F86; --line:#F4F8FC;
+  --soft:#1A3554; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;min-height:100vh}
+h1,h2,h3{font-family:"Big Shoulders Display","Impact","Arial Narrow",sans-serif;margin:0;line-height:1}
+button,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ballY);outline-offset:2px}
+
+.wrap{max-width:1180px;margin:0 auto;padding:20px 18px 48px}
+
+/* Hero: the court itself */
+.hero{position:relative;background:var(--outer);border-radius:22px;padding:22px;overflow:hidden;color:#fff}
+.court{position:relative;background:var(--court);border:4px solid var(--line);border-radius:6px;
+  display:grid;grid-template-columns:1fr 6px 1fr;min-height:300px}
+.court::before,.court::after{content:"";position:absolute;top:0;bottom:0;width:4px;background:var(--line);opacity:.9}
+.court::before{left:calc(33.33% - 2px)}
+.court::after{right:calc(33.33% - 2px)}
+.net{background:repeating-linear-gradient(0deg,rgba(255,255,255,.95) 0 3px,transparent 3px 9px),
+     repeating-linear-gradient(90deg,rgba(255,255,255,.95) 0 2px,transparent 2px 6px);
+     background-color:rgba(15,36,64,.55);box-shadow:0 0 0 2px #0F2440;z-index:2}
+.side{display:flex;align-items:center;justify-content:center;padding:18px;z-index:1}
+.title h1{font-size:clamp(46px,8vw,96px);font-weight:900;letter-spacing:.5px;color:#fff;text-shadow:0 4px 0 var(--courtDeep)}
+.title p{margin:10px 0 0;max-width:30ch;color:#FFF4EA;font-size:16px}
+.stage{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.ballBox{width:150px;height:150px;position:relative}
+.ball{width:100%;height:100%;filter:drop-shadow(0 10px 8px rgba(0,0,0,.28))}
+.ball.spin{animation:spin .55s linear infinite}
+.ball.bounce{animation:bounce .6s cubic-bezier(.3,.7,.4,1)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bounce{0%{transform:translateY(0) scale(1)}35%{transform:translateY(-38px) scale(1)}70%{transform:translateY(0) scale(1.08,.9)}100%{transform:translateY(0) scale(1)}}
+.picked{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:800;font-size:clamp(26px,4vw,40px);
+  min-height:1.2em;color:#fff;text-shadow:0 3px 0 var(--courtDeep);max-width:100%;overflow-wrap:anywhere}
+.picked small{display:block;font-family:"Rubik",sans-serif;font-weight:500;font-size:15px;text-shadow:none;color:#FFF4EA}
+
+/* Controls */
+.main{margin-top:20px}
+.drawbar{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px}
+.drawbar .btn{flex:1 1 200px;font-size:18px;padding:15px 18px}
+.gear{position:absolute;top:10px;right:10px;z-index:5;width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;display:grid;place-items:center;transition:background .2s,transform .3s}
+.gear:hover{background:rgba(255,255,255,.3);transform:rotate(45deg)}
+.admin{position:fixed;inset:0;z-index:30;background:rgba(8,23,43,.6);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;padding:calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));overflow:auto}
+.admin.open{display:flex}
+.admin .panel{width:100%;max-width:460px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.adminHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
+.adminHead h2{margin:0}
+.adminNote{color:var(--muted);font-size:14px;margin:0 0 6px}
+.close{border:0;background:var(--bg);width:40px;height:40px;border-radius:50%;font-size:22px;cursor:pointer;flex:none}
+@media (max-width:860px){.court{grid-template-columns:1fr;grid-template-rows:auto 6px auto}.court::before,.court::after{display:none}}
+.panel{background:var(--surface);border-radius:18px;padding:20px;border:1px solid var(--soft)}
+.panel h2{font-size:30px;font-weight:800;margin-bottom:12px}
+label{display:block;font-weight:500;font-size:14px;color:var(--muted);margin:14px 0 6px}
+textarea{width:100%;min-height:220px;resize:vertical;border:2px solid var(--soft);background:var(--bg);border-radius:12px;padding:12px;line-height:1.6}
+.row{display:flex;gap:10px;align-items:center}
+.stepper{display:flex;align-items:center;border:2px solid var(--soft);border-radius:12px;overflow:hidden}
+.stepper button{border:0;background:var(--bg);width:44px;height:44px;font-size:22px;cursor:pointer}
+.stepper output{min-width:48px;text-align:center;font-family:"Big Shoulders Display",Impact,sans-serif;font-size:28px;font-weight:800}
+.count{font-size:14px;color:var(--muted);margin-top:6px}
+.btns{display:grid;gap:10px;margin-top:18px}
+.btn{border:0;border-radius:999px;padding:13px 18px;font-weight:700;cursor:pointer;font-size:16px;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:var(--ballY);color:#0F2440;box-shadow:0 4px 0 #C99A00}
+.secondary{background:var(--outer);color:#fff}
+.ghost{background:transparent;border:2px solid var(--soft)}
+.toggle{display:flex;gap:6px;background:var(--bg);border-radius:999px;padding:4px;border:2px solid var(--soft)}
+.toggle button{flex:1;border:0;background:transparent;border-radius:999px;padding:8px;cursor:pointer;font-weight:500;font-size:14px}
+.toggle button[aria-pressed="true"]{background:var(--outer);color:#fff}
+
+/* Groups as mini courts */
+.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.group{background:var(--surface);border-radius:16px;overflow:hidden;border:1px solid var(--soft)}
+.ghead{background:var(--outer);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 14px}
+.ghead h3{font-size:30px;font-weight:900}
+.ghead span{font-size:13px;opacity:.85}
+.group.next .ghead{background:var(--court)}
+.slots{list-style:none;margin:0;padding:10px;display:grid;gap:8px;min-height:60px}
+.slot{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:10px;padding:9px 12px;font-weight:500;animation:drop .45s cubic-bezier(.2,1.4,.4,1)}
+.slot i{font-style:normal;flex:none;width:26px;height:26px;border-radius:50%;background:var(--ballY);color:#0F2440;display:grid;place-items:center;font-size:13px;font-weight:700}
+.slot.empty{background:transparent;border:2px dashed var(--soft);color:var(--muted);animation:none;font-weight:400}
+@keyframes drop{from{transform:translateY(-14px) scale(.9);opacity:0}to{transform:none;opacity:1}}
+.resultsHead{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:14px}
+.resultsHead h2{margin:0}
+.status{color:var(--muted);font-size:15px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(120px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;transition:transform .3s;z-index:20}
+.toast.show{transform:translateX(-50%) translateY(0)}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:15}
+
+/* Rally animation */
+.title > div,.ballBox,.picked{transition:opacity .3s}
+.court.drawing .title > div{opacity:.1}
+.court.drawing .ballBox,.court.drawing .picked{opacity:0}
+.rally{position:absolute;inset:0;pointer-events:none;z-index:4;display:none}
+.court.drawing .rally{display:block}
+.fly{position:absolute;left:0;top:0;width:84px;height:84px;margin:-42px 0 0 -42px;will-change:transform;z-index:2}
+.fly svg{width:100%;height:100%;filter:drop-shadow(0 8px 6px rgba(0,0,0,.3))}
+.shadow{position:absolute;left:0;top:0;width:70px;height:18px;margin:-9px 0 0 -35px;border-radius:50%;background:rgba(15,36,64,.45);filter:blur(2px)}
+.ticker{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:3;text-align:center;color:#fff;
+  font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:clamp(28px,5vw,50px);line-height:1.05;
+  background:rgba(15,36,64,.6);padding:8px 22px 10px;border-radius:16px;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+.ticker small{display:block;font-family:"Rubik",sans-serif;font-size:14px;font-weight:500;color:var(--ballY);margin-top:4px}
+.ring{position:absolute;z-index:5;width:20px;height:20px;margin:-10px 0 0 -10px;border:4px solid #fff;border-radius:50%;pointer-events:none;animation:ring .5s ease-out forwards}
+.ring.big{border-color:var(--ballY);border-width:6px;animation:ringBig .75s ease-out forwards}
+@keyframes ring{to{transform:scale(5);opacity:0}}
+@keyframes ringBig{to{transform:scale(12);opacity:0}}
+.court.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translate(-7px,4px)}40%{transform:translate(6px,-4px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,-1px)}}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6}
+.flash.go{animation:flash .45s ease-out}
+@keyframes flash{0%{opacity:.6}100%{opacity:0}}
+.picked.pop{animation:pop .55s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+
+html.calm .ball.bounce,html.calm .slot,html.calm .picked.pop,html.calm .gear:hover{animation:none;transform:none}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap">
+
+  <section class="hero" aria-label="Püşkatma meydançası">
+    <a class="gear" href="#admin" aria-label="Admin menyusu" title="Admin menyusu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </a>
+    <div class="court">
+      <div class="side title">
+        <div>
+          <h1>Voleybol püşkatma</h1>
+          <p>Topu atın. Hər atışda bir komanda növbəti qrupa düşür.</p>
+        </div>
+      </div>
+      <div class="net" aria-hidden="true"></div>
+      <div class="rally" id="rally" aria-hidden="true">
+        <div class="ticker" id="ticker"></div>
+        <div class="shadow" id="shadow"></div>
+        <div class="fly" id="fly"></div>
+      </div>
+      <div class="flash" id="flash" aria-hidden="true"></div>
+      <div class="side stage">
+        <div class="ballBox">
+          <svg class="ball" id="ball" viewBox="0 0 100 100" aria-hidden="true">
+            <defs>
+              <clipPath id="c"><circle cx="50" cy="50" r="46"/></clipPath>
+              <radialGradient id="shine" cx="35%" cy="30%" r="70%">
+                <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
+                <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+                <stop offset="1" stop-color="#000" stop-opacity=".25"/>
+              </radialGradient>
+            </defs>
+            <g clip-path="url(#c)">
+              <circle cx="50" cy="50" r="46" fill="#FFFFFF"/>
+              <path d="M50 50 C50 25 35 8 18 2 L-5 -5 L-5 60 C10 55 30 52 50 50Z" fill="var(--ballY)"/>
+              <path d="M50 50 C72 38 92 42 105 55 L105 -5 L60 -5 C70 15 65 35 50 50Z" fill="var(--ballB)"/>
+              <path d="M50 50 C28 62 20 82 25 105 L80 105 C62 92 52 72 50 50Z" fill="var(--ballY)"/>
+              <path d="M50 50 C50 25 35 8 18 2 M50 50 C72 38 92 42 105 55 M50 50 C28 62 20 82 25 105 M50 50 C30 52 10 55 -5 60 M50 50 C65 35 70 15 60 -5 M50 50 C52 72 62 92 80 105"
+                fill="none" stroke="#0F2440" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="50" cy="50" r="46" fill="url(#shine)"/>
+            </g>
+            <circle cx="50" cy="50" r="46" fill="none" stroke="#0F2440" stroke-width="2.5"/>
+          </svg>
+        </div>
+        <div class="picked" id="picked" aria-live="polite">Hazırdır<small>Top atmağa hazır</small></div>
+      </div>
+    </div>
+  </section>
+
+  <main class="main">
+    <div class="drawbar">
+      <button class="btn primary" id="drawOne">Topu at</button>
+      <button class="btn secondary" id="drawAll">Hamısını çək</button>
+    </div>
+    <section>
+      <div class="resultsHead">
+        <div>
+          <h2 style="font-size:34px;font-weight:800">Nəticələr</h2>
+          <div class="status" id="status"></div>
+        </div>
+        <button class="btn ghost" id="copy">Nəticəni kopyala</button>
+      </div>
+      <div class="groups" id="groups"></div>
+    </section>
+  </main>
+</div>
+
+<div class="admin" id="admin" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <aside class="panel">
+      <div class="adminHead">
+        <h2 id="adminTitle">Admin menyusu</h2>
+        <a class="close" href="#" id="closeAdmin" aria-label="Bağla" style="display:grid;place-items:center;text-decoration:none;color:inherit">×</a>
+      </div>
+      <p class="adminNote">Bu bölmə əsas ekranda görünmür. Dəyişikliklər dərhal tətbiq olunur və püşkatma yenidən başlayır.</p>
+      <label for="names">Hər sətirdə bir komanda və ya oyunçu</label>
+      <textarea id="names" spellcheck="false"></textarea>
+      <div class="count" id="count"></div>
+
+      <label>Nə bölünür?</label>
+      <div class="toggle" role="group" aria-label="Rejim">
+        <button type="button" data-mode="group" aria-pressed="true">Qruplar</button>
+        <button type="button" data-mode="team" aria-pressed="false">Komandalar</button>
+      </div>
+
+      <label id="nLabel">Qrup sayı</label>
+      <div class="row">
+        <div class="stepper">
+          <button type="button" id="minus" aria-label="Azalt">−</button>
+          <output id="n">4</output>
+          <button type="button" id="plus" aria-label="Artır">+</button>
+        </div>
+        <span class="count" id="perGroup"></span>
+      </div>
+
+      <label>Animasiya</label>
+      <div class="toggle" role="group" aria-label="Animasiya">
+        <button type="button" data-motion="on" aria-pressed="false">Həmişə göstər</button>
+        <button type="button" data-motion="system" aria-pressed="false">Sistemə görə</button>
+        <button type="button" data-motion="off" aria-pressed="false">Söndür</button>
+      </div>
+      <div class="count" id="motionNote"></div>
+
+      <div class="btns">
+        <button class="btn ghost" id="reset">Püşkatmanı sıfırla</button>
+        <a class="btn primary" href="#" style="text-align:center;text-decoration:none">Hazırdır, bağla</a>
+      </div>
+    </aside>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const defaults = ["Neftçi","Azərreyl","Qaraçuxur","Murov","Lokomotiv","Abşeron","Gəncə","Şəki","Lənkəran","Sumqayıt","Quba","Naxçıvan"];
+const store = {
+  get(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+let mode = store.get("vb-mode") || "group";
+let n = parseInt(store.get("vb-n")) || 4;
+let pool = [], groups = [], turn = 0, busy = false, auto = false;
+
+$("#names").value = store.get("vb-names") || defaults.join("\n");
+
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const groupName = i => mode === "group" ? `Qrup ${letters[i] || i+1}` : `Komanda ${i+1}`;
+const names = () => [...new Set($("#names").value.split("\n").map(s=>s.trim()).filter(Boolean))];
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function setup(){
+  const list = names();
+  n = Math.max(2, Math.min(n, 16));
+  pool = shuffle(list);
+  groups = Array.from({length:n}, () => []);
+  turn = 0;
+  $("#n").value = n; $("#n").textContent = n;
+  $("#count").textContent = `${list.length} ad yazılıb`;
+  const per = list.length ? Math.ceil(list.length / n) : 0;
+  $("#perGroup").textContent = per ? `hər birində ${Math.floor(list.length/n)}–${per}` : "";
+  $("#nLabel").textContent = mode === "group" ? "Qrup sayı" : "Komanda sayı";
+  document.querySelectorAll(".toggle button[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode));
+  $("#picked").innerHTML = "Hazırdır<small>Top atmağa hazır</small>";
+  render(); updateButtons();
+}
+
+function render(){
+  const total = pool.length + groups.flat().length;
+  const cap = Math.ceil(total / n);
+  $("#groups").innerHTML = groups.map((g,i) => {
+    const empties = Math.max(0, cap - g.length);
+    return `<article class="group ${pool.length && i === turn % n ? "next" : ""}">
+      <div class="ghead"><h3>${groupName(i)}</h3><span>${g.length} ${mode==="group"?"komanda":"oyunçu"}</span></div>
+      <ol class="slots">
+        ${g.map((t,k)=>`<li class="slot"><i>${k+1}</i>${esc(t)}</li>`).join("")}
+        ${Array.from({length:empties},()=>`<li class="slot empty">Boş yer</li>`).join("")}
+      </ol></article>`;
+  }).join("");
+  const done = groups.flat().length;
+  $("#status").textContent = !total ? "Admin menyusunda (sağ yuxarıdakı dişli) adları daxil edin."
+    : pool.length ? `${done} / ${total} çəkilib. Növbəti: ${groupName(turn % n)}`
+    : `Püşkatma bitdi. ${total} ad ${n} ${mode==="group"?"qrupa":"komandaya"} bölündü.`;
+}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+function updateButtons(){
+  $("#drawOne").disabled = busy || !pool.length;
+  $("#drawAll").disabled = busy || !pool.length;
+  $("#drawAll").textContent = auto ? "Çəkilir…" : "Hamısını çək";
+}
+
+const sysReduce = matchMedia("(prefers-reduced-motion: reduce)");
+let motionPref = store.get("vb-motion") || "on";
+const reduceOn = () => motionPref === "off" || (motionPref === "system" && sysReduce.matches);
+const wait = ms => new Promise(r => setTimeout(r, reduceOn() ? 0 : ms));
+function applyMotion(){
+  document.documentElement.classList.toggle("calm", reduceOn());
+  document.querySelectorAll("[data-motion]").forEach(b => b.setAttribute("aria-pressed", b.dataset.motion === motionPref));
+  $("#motionNote").textContent = sysReduce.matches
+    ? "Bu kompüterdə sistem animasiyaları söndürülüb. “Həmişə göstər” seçilibə, püşkatma animasiyası yenə də işləyir."
+    : "";
+}
+document.querySelectorAll("[data-motion]").forEach(b => b.onclick = () => {
+  motionPref = b.dataset.motion; store.set("vb-motion", motionPref); applyMotion();
+});
+sysReduce.addEventListener?.("change", applyMotion);
+
+/* ---------- Rally: the ball crosses the net, then a spike reveals the pick ---------- */
+const court = document.querySelector(".court");
+$("#fly").innerHTML = $("#ball").outerHTML.replace('id="ball"', '').replace('class="ball"', '');
+let rot = 0;
+
+function sidePoints(){
+  const c = court.getBoundingClientRect();
+  return [...court.querySelectorAll(".side")].map(el => {
+    const r = el.getBoundingClientRect();
+    return {x:r.left-c.left+r.width/2, y:r.top-c.top+r.height/2+20, w:r.width, h:r.height};
+  });
+}
+const jitter = p => ({x:p.x+(Math.random()-.5)*p.w*.45, y:p.y+(Math.random()-.5)*p.h*.3, w:p.w, h:p.h});
+
+// moves the ball along the floor from → to, lifted by hFn(t) pixels
+function move(from, to, dur, hFn, ease = t => t, spin = 420){
+  return new Promise(res => {
+    const fly = $("#fly"), sh = $("#shadow"), t0 = performance.now();
+    (function step(now){
+      const raw = Math.min(1, (now - t0) / dur), t = ease(raw);
+      const x = from.x + (to.x - from.x) * t, y = from.y + (to.y - from.y) * t;
+      const h = hFn(t), s = 1 + h / 260;
+      fly.style.transform = `translate(${x}px,${y - h}px) scale(${s}) rotate(${rot + raw * spin}deg)`;
+      sh.style.transform = `translate(${x}px,${y + 36}px) scale(${Math.max(.35, 1 - h / 380)})`;
+      sh.style.opacity = String(Math.max(.15, 1 - h / 260));
+      if(raw < 1) requestAnimationFrame(step); else { rot += spin; res(); }
+    })(t0);
+  });
+}
+function ring(p, big){
+  const r = document.createElement("div");
+  r.className = "ring" + (big ? " big" : "");
+  r.style.left = p.x + "px"; r.style.top = (p.y + 36) + "px";
+  court.appendChild(r); setTimeout(() => r.remove(), 900);
+}
+
+async function rally(fast, team, gi){
+  const [A, B] = sidePoints();
+  const tk = $("#ticker");
+  let label = `${groupName(gi)} üçün`, delay = 55, running = true;
+  court.classList.add("drawing");
+  (async () => {
+    while(running){
+      const r = pool[Math.floor(Math.random() * pool.length)];
+      tk.innerHTML = `${esc(r)}<small>${label}</small>`;
+      await wait(delay);
+    }
+  })();
+
+  // serve toss
+  let pos = jitter(A);
+  await move(pos, pos, fast ? 260 : 460, t => 120 * Math.sin(t * Math.PI), t => t, 180);
+
+  // passes over the net, slowing down each time
+  const passes = fast ? 1 : 5;
+  for(let i = 0; i < passes; i++){
+    label = `${groupName(gi)} üçün: zərbə ${i + 1}`;
+    const target = jitter(i % 2 === 0 ? B : A);
+    const peak = 150 + i * 12;
+    await move(pos, target, fast ? 380 : 470 + i * 95, t => 4 * peak * t * (1 - t));
+    ring(target, false);
+    pos = target;
+    delay = fast ? 60 : 60 + i * 40;
+  }
+
+  // set up the spike: ball rises and hangs
+  label = "Və…"; delay = fast ? 120 : 240;
+  await move(pos, pos, fast ? 280 : 650, t => 230 * Math.sin(t * Math.PI / 2), t => 1 - (1 - t) * (1 - t), 200);
+  await wait(fast ? 60 : 500);
+  running = false;
+  tk.innerHTML = `${esc(team)}<small>Hücum zərbəsi!</small>`;
+
+  // spike down onto the court
+  const land = {x:B.x, y:B.y};
+  await move(pos, land, fast ? 140 : 190, t => 230 * (1 - t * t), t => t, 360);
+  ring(land, true);
+  const fl = $("#flash"); fl.classList.remove("go"); void fl.offsetWidth; fl.classList.add("go");
+  court.classList.remove("shake"); void court.offsetWidth; court.classList.add("shake");
+  setTimeout(() => court.classList.remove("shake"), 420);
+}
+
+async function drawOne(fast){
+  if(busy || !pool.length) return;
+  busy = true; updateButtons();
+  const ball = $("#ball"), picked = $("#picked");
+  const gi = turn % n;
+  const team = pool[0];
+  if(!reduceOn()) await rally(fast, team, gi);
+  pool.shift(); groups[gi].push(team); turn++;
+  court.classList.remove("drawing");
+  ball.classList.remove("bounce"); void ball.offsetWidth; ball.classList.add("bounce");
+  picked.innerHTML = `${esc(team)}<small>${groupName(gi)}</small>`;
+  picked.classList.remove("pop"); void picked.offsetWidth; picked.classList.add("pop");
+  render();
+  busy = false; updateButtons();
+  if(!pool.length){ celebrate(); }
+}
+
+async function drawAll(){
+  if(busy || !pool.length) return;
+  auto = true; updateButtons();
+  while(pool.length){ await drawOne(true); await wait(380); }
+  auto = false; updateButtons();
+}
+
+/* confetti in ball colours */
+const cv = $("#fx"), cx = cv.getContext("2d");
+function celebrate(){
+  if(reduceOn()) return;
+  cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ["#FFD23F","#1F5FBF","#E8833A","#FFFFFF"];
+  const parts = Array.from({length:140},()=>({x:innerWidth/2,y:innerHeight/3,vx:(Math.random()-.5)*14,vy:Math.random()*-12-4,
+    r:Math.random()*6+4,c:cols[Math.floor(Math.random()*4)],a:Math.random()*6,va:(Math.random()-.5)*.3}));
+  let f=0;
+  (function tick(){
+    cx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.a+=p.va;
+      cx.save();cx.translate(p.x,p.y);cx.rotate(p.a);cx.fillStyle=p.c;cx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);cx.restore()});
+    if(++f<150) requestAnimationFrame(tick); else cx.clearRect(0,0,cv.width,cv.height);
+  })();
+}
+
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),1800)}
+
+$("#drawOne").onclick = () => drawOne(false);
+$("#drawAll").onclick = drawAll;
+$("#reset").onclick = () => { if(!busy) setup(); };
+$("#plus").onclick = () => { if(!busy){ n++; store.set("vb-n",n); setup(); } };
+$("#minus").onclick = () => { if(!busy){ n--; store.set("vb-n",n); setup(); } };
+document.querySelectorAll(".toggle button[data-mode]").forEach(b => b.onclick = () => {
+  if(busy) return; mode = b.dataset.mode; store.set("vb-mode",mode); setup();
+});
+let t; $("#names").addEventListener("input", () => {
+  store.set("vb-names", $("#names").value);
+  clearTimeout(t); t = setTimeout(() => { if(!busy) setup(); }, 300);
+});
+$("#copy").onclick = async () => {
+  const text = groups.map((g,i)=>`${groupName(i)}\n${g.map((x,k)=>`  ${k+1}. ${x}`).join("\n")}`).join("\n\n");
+  try{ await navigator.clipboard.writeText(text); toast("Nəticə kopyalandı"); }
+  catch(e){ toast("Kopyalamaq alınmadı"); }
+};
+function route(){
+  const open = location.hash === "#admin";
+  $("#admin").classList.toggle("open", open);
+  document.body.style.overflow = open ? "hidden" : "";
+  if(open) setTimeout(()=>$("#names").focus(), 50);
+}
+addEventListener("hashchange", route);
+$("#admin").addEventListener("click", e => { if(e.target.id === "admin") location.hash = ""; });
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && location.hash === "#admin"){ location.hash = ""; return; }
+  if(location.hash === "#admin") return;
+  if(e.code === "Space" && document.activeElement.tagName !== "TEXTAREA" && document.activeElement.tagName !== "BUTTON"){
+    e.preventDefault(); drawOne(false);
+  }
+});
+applyMotion();
+setup();
+route();
+</script>
+</body>
+</html>
