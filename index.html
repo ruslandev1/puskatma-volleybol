@@ -11,6 +11,7 @@
   --bg:#EAF3FB; --surface:#FFFFFF; --ink:#0F2440; --muted:#5A6B82;
   --court:#E8833A; --courtDeep:#C9621C; --outer:#2D6CB0; --line:#FFFFFF;
   --ballY:#FFD23F; --ballB:#1F5FBF; --soft:#D6E6F5;
+  --banner:#0E2F5A; --bannerEdge:#08203F; --bannerDeep:#05152B;
   color-scheme:light;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
@@ -31,6 +32,13 @@
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;min-height:100vh}
+/* Avrora artwork behind the whole page; the overlay keeps it quiet and the text on it readable */
+body::before{content:"";position:fixed;inset:0;z-index:-1;
+  background:linear-gradient(rgba(8,23,43,.4),rgba(8,23,43,.4)),url("assets/Artboard%201loqolar%20.png") center/cover no-repeat}
+.resultsHead{background:rgba(8,23,43,.78);border-radius:16px;padding:12px 16px}
+.resultsHead h2{color:#fff}
+.resultsHead .status{color:#D6E6F5}
+.resultsHead .ghost{color:#fff;border-color:rgba(255,255,255,.55)}
 h1,h2,h3{font-family:"Big Shoulders Display","Impact","Arial Narrow",sans-serif;margin:0;line-height:1}
 button,textarea,select{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--ballY);outline-offset:2px}
@@ -38,8 +46,8 @@ button,textarea,select{font:inherit;color:inherit}
 .wrap{max-width:1180px;margin:0 auto;padding:20px 18px 48px}
 
 /* Hero: the court itself */
-.hero{position:relative;background:var(--outer);border-radius:22px;padding:22px;overflow:hidden;color:#fff}
-.court{position:relative;background:var(--court);border:4px solid var(--line);border-radius:6px;
+.hero{position:relative;background:var(--bannerEdge);border-radius:22px;padding:22px;overflow:hidden;color:#fff}
+.court{position:relative;background:var(--banner);border:4px solid var(--line);border-radius:6px;
   display:grid;grid-template-columns:1fr 6px 1fr;min-height:300px}
 .court::before,.court::after{content:"";position:absolute;top:0;bottom:0;width:4px;background:var(--line);opacity:.9}
 .court::before{left:calc(33.33% - 2px)}
@@ -48,7 +56,10 @@ button,textarea,select{font:inherit;color:inherit}
      repeating-linear-gradient(90deg,rgba(255,255,255,.95) 0 2px,transparent 2px 6px);
      background-color:rgba(15,36,64,.55);box-shadow:0 0 0 2px #0F2440;z-index:2}
 .side{display:flex;align-items:center;justify-content:center;padding:18px;z-index:1}
-.title h1{font-size:clamp(46px,8vw,96px);font-weight:900;letter-spacing:.5px;color:#fff;text-shadow:0 4px 0 var(--courtDeep)}
+.title > div{width:100%}
+/* Court-coloured backing so the court line breaks behind the logo instead of running through its text */
+.title h1{width:fit-content;max-width:100%;background:var(--banner);box-shadow:0 0 0 10px var(--banner)}
+.title h1 img{display:block;width:min(100%,460px);height:auto;filter:drop-shadow(0 3px 0 var(--bannerDeep))}
 .title p{margin:10px 0 0;max-width:30ch;color:#FFF4EA;font-size:16px}
 .stage{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
 .ballBox{width:150px;height:150px;position:relative}
@@ -58,7 +69,7 @@ button,textarea,select{font:inherit;color:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes bounce{0%{transform:translateY(0) scale(1)}35%{transform:translateY(-38px) scale(1)}70%{transform:translateY(0) scale(1.08,.9)}100%{transform:translateY(0) scale(1)}}
 .picked{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:800;font-size:clamp(26px,4vw,40px);
-  min-height:1.2em;color:#fff;text-shadow:0 3px 0 var(--courtDeep);max-width:100%;overflow-wrap:anywhere}
+  min-height:1.2em;color:#fff;text-shadow:0 3px 0 var(--bannerDeep);max-width:100%;overflow-wrap:anywhere}
 .picked small{display:block;font-family:"Rubik",sans-serif;font-weight:500;font-size:15px;text-shadow:none;color:#FFF4EA}
 
 /* Controls */
@@ -88,6 +99,7 @@ textarea{width:100%;min-height:220px;resize:vertical;border:2px solid var(--soft
 .btn{border:0;border-radius:999px;padding:13px 18px;font-weight:700;cursor:pointer;font-size:16px;transition:transform .12s}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
+.drawbar .btn:disabled{opacity:1;filter:grayscale(.75) brightness(.72)}
 .primary{background:var(--ballY);color:#0F2440;box-shadow:0 4px 0 #C99A00}
 .secondary{background:var(--outer);color:#fff}
 .ghost{background:transparent;border:2px solid var(--soft)}
@@ -162,7 +174,7 @@ html.calm .ball.bounce,html.calm .slot,html.calm .picked.pop,html.calm .ballBox 
     <div class="court">
       <div class="side title">
         <div>
-          <h1>Voleybol püşkatma</h1>
+          <h1><img src="assets/banner-logo.png" alt="Avrora Qrup II Voleybol Çempionatı" width="1200" height="571"></h1>
           <p>Topu atın. Hər atışda bir komanda növbəti qrupa düşür.</p>
         </div>
       </div>
@@ -352,7 +364,9 @@ sysReduce.addEventListener?.("change", applyMotion);
 
 /* ---------- Rally: the ball crosses the net, then a spike reveals the pick ---------- */
 const court = document.querySelector(".court");
-$("#fly").innerHTML = $("#ball").outerHTML.replace('id="ball"', '').replace('class="ball"', '');
+// The copy needs its own SVG ids: it comes first in the DOM, so shared ids would point the idle ball at defs inside the hidden rally layer
+$("#fly").innerHTML = $("#ball").outerHTML.replace('id="ball"', '').replace('class="ball"', '')
+  .replace('id="c"', 'id="c2"').replace('url(#c)', 'url(#c2)').replace('id="shine"', 'id="shine2"').replace('url(#shine)', 'url(#shine2)');
 let rot = 0;
 
 function sidePoints(){
